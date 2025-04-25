@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Request Service</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/web3/1.6.1/web3.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: #f7f7f7;
+        }
+        .container {
+            width: 400px;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        input, textarea, button {
+            margin: 10px 0;
+            padding: 10px;
+            width: 90%;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .history-btn {
+            background-color: #28a745;
+        }
+        .history-btn:hover {
+            background-color: #218838;
+        }
+        #redirectButton {
+            background-color: #008CBA;
+        }
+        #redirectButton:hover {
+            background-color: #007B9E;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Request Service</h1>
+        <form id="serviceRequestForm">
+            <input type="text" id="serviceMachineId" placeholder="Machine ID" required><br>
+            <textarea id="problem" placeholder="Describe the Problem" required></textarea><br>
+            <input type="text" id="transactionHash" placeholder="Transaction Hash (Auto-generated)" readonly><br>
+            <button type="submit">Request Service</button>
+        </form>
+
+        <!-- Service History Button -->
+    </div>
+
+    <script>
+        const contractAddress = "0x6A4A2eA7576a08Fa9b5d370bf8F2C439A8a45e56"; // Replace with your deployed contract address
+        const abi = [
+            {
+                "inputs": [
+                    { "internalType": "string", "name": "_machineId", "type": "string" },
+                    { "internalType": "string", "name": "_problem", "type": "string" }
+                ],
+                "name": "requestService",
+                "outputs": [],
+                "stateMutability": "payable", // Make sure the contract function is marked as payable
+                "type": "function"
+            }
+        ];
+
+        const web3 = new Web3(window.ethereum);
+        const contract = new web3.eth.Contract(abi, contractAddress);
+
+        window.ethereum.request({ method: "eth_requestAccounts" })
+            .then(accounts => {
+                console.log("Connected MetaMask Accounts:", accounts);
+            })
+            .catch(error => {
+                console.error("MetaMask Connection Error:", error.message);
+                alert("Failed to connect to MetaMask. Please try again.");
+            });
+
+        document.getElementById("serviceRequestForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const machineId = document.getElementById("serviceMachineId").value;
+            const problem = document.getElementById("problem").value;
+
+            try {
+                // Convert 0.5 ETH to Wei (1 ETH = 10^18 Wei)
+                const amountInWei = web3.utils.toWei("0.5", "ether");
+
+                const transaction = await contract.methods.requestService(machineId, problem)
+                    .send({ 
+                        from: (await web3.eth.getAccounts())[0],
+                        value: amountInWei // Sending 0.5 ETH with the transaction
+                    });
+
+                console.log("Service Request Successful. Transaction Hash:", transaction.transactionHash);
+
+                // Set the transaction hash in the form input field
+                document.getElementById("transactionHash").value = transaction.transactionHash;
+
+                // Save to backend or update history
+                saveServiceRequest(machineId, problem, transaction.transactionHash);
+                alert("Service Requested Successfully with payment of 0.5 ETH!");
+            } catch (error) {
+                console.error("Error during service request:", error);
+            }
+        });
+
+        async function saveServiceRequest(machineId, problem, transactionHash) {
+            const response = await fetch('/addServiceRequest', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ machineId, problem, transactionHash }),
+            });
+
+            const data = await response.json();
+            console.log("Service request saved:", data);
+        }
+
+        // Redirect to Service History page when button is clicked
+        document.getElementById("serviceHistoryBtn").addEventListener("click", () => {
+            window.location.href = "servicehistory.html";
+        });
+    </script>
+</body>
+</html>

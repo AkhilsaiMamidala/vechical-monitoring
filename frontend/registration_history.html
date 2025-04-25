@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration History</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+        }
+
+        .container {
+            width: 80%;
+            margin: auto;
+            padding: 20px;
+            background: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            margin-top: 50px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #343a40;
+        }
+
+        .search-bar {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .search-bar input {
+            width: 60%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+        }
+
+        .history-list {
+            margin-top: 20px;
+        }
+
+        .machine-card {
+            border: 1px solid #ced4da;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            background-color: #f1f1f1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Registration History</h1>
+
+        <div class="search-bar">
+            <input type="text" id="searchMachineId" placeholder="Search by Machine ID" oninput="filterHistory()">
+        </div>
+
+        <div class="history-list" id="historyList">
+            <!-- Machine registration history will be displayed here -->
+        </div>
+    </div>
+
+    <script>
+        const historyList = document.getElementById("historyList");
+
+        function displayHistory(machineHistory) {
+            historyList.innerHTML = "";
+            machineHistory.forEach((machine) => {
+                const card = document.createElement("div");
+                card.className = "machine-card";
+                card.innerHTML = `
+                    <p><strong>Machine ID:</strong> ${machine.machineId}</p>
+                    <p><strong>Machine Name:</strong> ${machine.machineName}</p>
+                    <p><strong>Purchase Date:</strong> ${machine.purchaseDate}</p>
+                    <p><strong>Manufacturer:</strong> ${machine.manufacturer}</p>
+                `;
+                historyList.appendChild(card);
+            });
+        }
+
+        function filterHistory() {
+            const searchValue = document.getElementById("searchMachineId").value.toLowerCase();
+            const machineHistory = JSON.parse(localStorage.getItem("machineHistory")) || [];
+            const filteredMachines = machineHistory.filter((machine) =>
+                machine.machineId.toLowerCase().includes(searchValue)
+            );
+            displayHistory(filteredMachines);
+        }
+
+        // Load history on page load
+        const machineHistory = JSON.parse(localStorage.getItem("machineHistory")) || [];
+        displayHistory(machineHistory);
+    </script>
+</body>
+</html>

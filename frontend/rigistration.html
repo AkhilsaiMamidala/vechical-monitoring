@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Machine Registration</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/web3/1.6.1/web3.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+        }
+
+        .container {
+            width: 50%;
+            margin: auto;
+            padding: 30px;
+            background: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            margin-top: 50px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #343a40;
+            margin-bottom: 20px;
+        }
+
+        form input {
+            width: 100%;
+            margin: 10px 0;
+            padding: 12px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        button {
+            display: inline-block;
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            color: #fff;
+            background: #007bff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        .message {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .message.success {
+            color: #28a745;
+        }
+
+        .message.error {
+            color: #dc3545;
+        }
+
+        .history-button, .service-button {
+            margin-top: 30px;
+            padding: 12px 20px;
+            font-size: 16px;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .history-button {
+            background: #17a2b8;
+        }
+
+        .history-button:hover {
+            background: #138496;
+        }
+
+        .service-button {
+            background: #6c757d;
+        }
+
+        .service-button:hover {
+            background: #5a6268;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Machine Registration</h1>
+        <form id="newMachineForm">
+            <input type="text" id="newMachineId" placeholder="Machine ID" required><br>
+            <input type="text" id="newMachineName" placeholder="Machine Name" required><br>
+            <input type="date" id="newPurchaseDate" required><br>
+            <input type="text" id="newManufacturer" placeholder="Manufacturer" required><br>
+            <button type="submit">Register Machine</button>
+        </form>
+
+        <div id="message" class="message"></div>
+    </div>
+
+    <script>
+        const contractAddress = "0x6A4A2eA7576a08Fa9b5d370bf8F2C439A8a45e56"; // Replace with your deployed contract address
+        const abi = [
+            {
+                "inputs": [
+                    {
+                        "internalType": "string",
+                        "name": "_machineId",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "_machineName",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "_purchaseDate",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "_manufacturer",
+                        "type": "string"
+                    }
+                ],
+                "name": "registerMachine",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "machines",
+                "outputs": [
+                    {
+                        "components": [
+                            {
+                                "internalType": "string",
+                                "name": "machineId",
+                                "type": "string"
+                            },
+                            {
+                                "internalType": "string",
+                                "name": "machineName",
+                                "type": "string"
+                            },
+                            {
+                                "internalType": "string",
+                                "name": "purchaseDate",
+                                "type": "string"
+                            },
+                            {
+                                "internalType": "string",
+                                "name": "manufacturer",
+                                "type": "string"
+                            }
+                        ],
+                        "internalType": "struct MachineRegistry.Machine",
+                        "name": "",
+                        "type": "tuple"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": false,
+                        "internalType": "string",
+                        "name": "machineId",
+                        "type": "string"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "string",
+                        "name": "machineName",
+                        "type": "string"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "string",
+                        "name": "purchaseDate",
+                        "type": "string"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "string",
+                        "name": "manufacturer",
+                        "type": "string"
+                    }
+                ],
+                "name": "MachineRegistered",
+                "type": "event"
+            }
+        ]; // Replace with your contract's ABI
+
+        let web3;
+        let contract;
+
+        async function connectMetaMask() {
+            if (window.ethereum) {
+                web3 = new Web3(window.ethereum);
+                await window.ethereum.request({ method: "eth_requestAccounts" });
+                contract = new web3.eth.Contract(abi, contractAddress);
+            } else {
+                alert("Please install MetaMask to use this feature.");
+            }
+        }
+
+        async function checkBalance(account) {
+            const balance = await web3.eth.getBalance(account);
+            // Convert the balance from Wei to Ether
+            const etherBalance = web3.utils.fromWei(balance, 'ether');
+            return etherBalance;
+        }
+
+        document.getElementById("newMachineForm").addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            const machineId = document.getElementById("newMachineId").value.trim();
+            const machineName = document.getElementById("newMachineName").value.trim();
+            const purchaseDate = document.getElementById("newPurchaseDate").value.trim();
+            const manufacturer = document.getElementById("newManufacturer").value.trim();
+
+            if (!machineId || !machineName || !purchaseDate || !manufacturer) {
+                document.getElementById("message").textContent = "All fields are required!";
+                document.getElementById("message").className = "message error";
+                return;
+            }
+
+            const newMachine = {
+                machineId,
+                machineName,
+                purchaseDate,
+                manufacturer,
+            };
+
+            try {
+                // Connect to MetaMask
+                await connectMetaMask();
+
+                const accounts = await web3.eth.getAccounts();
+                const account = accounts[0];
+
+                // Check if account has at least 1 Ether (in Wei)
+                const balance = await web3.eth.getBalance(account);
+                const etherBalance = web3.utils.fromWei(balance, 'ether');
+                
+                console.log("Current Ether balance: ", etherBalance);
+                if (parseFloat(etherBalance) < 1) { // Ensure user has at least 1 Ether
+                    document.getElementById("message").textContent = "Insufficient Ether. You need at least 1 Ether to proceed!";
+                    document.getElementById("message").className = "message error";
+                    return;
+                }
+
+                // Interact with the smart contract and send 1 Ether with the transaction
+                const gasEstimate = await contract.methods.registerMachine(machineId, machineName, purchaseDate, manufacturer).estimateGas({ from: account });
+                const gasPrice = await web3.eth.getGasPrice();
+
+                // Initiate the transaction, sending 1 Ether along with the gas fees
+                const transaction = await contract.methods.registerMachine(machineId, machineName, purchaseDate, manufacturer)
+                    .send({
+                        from: account,
+                        value: web3.utils.toWei('1', 'ether'), // Send 1 Ether with the transaction
+                        gas: gasEstimate,
+                        gasPrice: gasPrice
+                    });
+
+                console.log("Transaction completed", transaction);
+
+                // Save to localStorage
+                let machineHistory = JSON.parse(localStorage.getItem("machineHistory")) || [];
+                machineHistory.push(newMachine);
+                localStorage.setItem("machineHistory", JSON.stringify(machineHistory));
+
+                document.getElementById("message").textContent = "Machine registered and transaction completed with 1 Ether sent!";
+                document.getElementById("message").className = "message success";
+
+                // Clear form fields
+                document.getElementById("newMachineForm").reset();
+            } catch (error) {
+                console.error("Transaction failed:", error);
+                document.getElementById("message").textContent = "Transaction failed. Please try again.";
+                document.getElementById("message").className = "message error";
+            }
+        });
+    </script>
+</body>
+</html>

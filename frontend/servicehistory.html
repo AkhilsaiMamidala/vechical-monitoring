@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service History</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        input[type="text"] {
+            padding: 10px;
+            width: 200px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+    <h1>Service History</h1>
+
+    <!-- Search Box -->
+    <input type="text" id="searchInput" placeholder="Search by Machine ID" onkeyup="searchServiceRequests()">
+
+    <table>
+        <thead>
+            <tr>
+                <th>Machine ID</th>
+                <th>Problem</th>
+                <th>Transaction Hash</th>
+                <th>Requested At</th>
+            </tr>
+        </thead>
+        <tbody id="serviceRequestsTable">
+            <!-- Data will be populated here -->
+        </tbody>
+    </table>
+
+    <script>
+        let serviceRequests = []; // Store the data in a variable for searching
+
+        async function loadServiceRequests() {
+            try {
+                const response = await fetch('http://localhost:3000/serviceRequests');
+                serviceRequests = await response.json(); // Store the data
+
+                const tableBody = document.getElementById('serviceRequestsTable');
+                tableBody.innerHTML = ''; // Clear existing rows
+
+                serviceRequests.forEach(request => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${request.machineId}</td>
+                        <td>${request.problem}</td>
+                        <td>${request.transactionHash}</td>
+                        <td>${new Date(request.requestedAt).toLocaleString()}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error loading service requests:', error);
+                alert('An error occurred while loading the service history.');
+            }
+        }
+
+        // Function to filter service requests by Machine ID
+        function searchServiceRequests() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const filteredRequests = serviceRequests.filter(request => 
+                request.machineId.toLowerCase().includes(searchTerm)
+            );
+
+            const tableBody = document.getElementById('serviceRequestsTable');
+            tableBody.innerHTML = ''; // Clear existing rows
+
+            filteredRequests.forEach(request => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${request.machineId}</td>
+                    <td>${request.problem}</td>
+                    <td>${request.transactionHash}</td>
+                    <td>${new Date(request.requestedAt).toLocaleString()}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Load the service requests when the page loads
+        window.onload = loadServiceRequests;
+    </script>
+</body>
+</html>
